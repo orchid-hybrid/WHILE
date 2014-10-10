@@ -44,9 +44,9 @@ terminalB = choice [ do string "true" ; return (BTrue)
                    , do string "not " ; skipSpaces
                         m <- terminalB
                         return (BNot m)
-                   , do m <- terminalA ; skipSpaces
+                   , do m <- parseA
                         o <- parseOpR ; skipSpaces
-                        n <- terminalA
+                        n <- parseA
                         return (BOpR o m n)
                    , brackets parseB
                    ]
