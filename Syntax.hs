@@ -2,7 +2,8 @@ module Syntax (
  OpA(..), OpB(..), OpR(..),
  evalOpA, evalOpB, evalOpR,
  A(..), B(..), S(..),
- evalA, evalB
+ evalA, evalB, evalS,
+ emptyEnvironment, lookupEnvironment, extendEnvironment
  ) where
 
 data OpA -- Arithmetic Operator
@@ -50,14 +51,14 @@ evalA env (AOpA o p q) = evalOpA o (evalA env p) (evalA env q)
 data B
  = BTrue
  | BFalse
- | Not B
+ | BNot B
  | BOpB OpB B B
  | BOpR OpR A A
  deriving (Eq, Show)
 
 evalB env BTrue = True
 evalB env BFalse = False
-evalB env (Not m) = not (evalB env m)
+evalB env (BNot m) = not (evalB env m)
 evalB env (BOpB o m n) = evalOpB o (evalB env m) (evalB env n)
 evalB env (BOpR o m n) = evalOpR o (evalA env m) (evalA env n)
 
