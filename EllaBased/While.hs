@@ -15,23 +15,26 @@ import Fresh
 import Syntax
 import Assembly
 
-type Compile a = WriterT [Asm Bool] (Fresh String) a
+data Regs = RAX | BL
+ deriving (Eq, Show)
 
-compileA :: A -> It Bool -> Compile ()
+type Compile a = WriterT [Asm Regs] (Fresh String) a
+
+compileA :: A -> It Regs -> Compile ()
 compileA (V s) r@(Register _) = tell [AMov r (Cell s)]
-compileA (V s) r = tell [AMov (Register True) (Cell s), AMov r (Register True)]
+compileA (V s) r = tell [AMov (Register RAX) (Cell s), AMov r (Register RAX)]
 compileA (N i) r = tell [AMov r (Num . fromIntegral $ i)]
 compileA (AOpA op x y) r = do
  a <- lift $ fresh
  compileA y (Cell a)
- compileA y (Register True)
+ compileA x (Register RAX)
  case op of
-  Plus -> tell [AAdd (Register True) (Cell a)]
-  Minus -> tell [ASub (Register True) (Cell a)]
+  Plus -> tell [AAdd (Register RAX) (Cell a)]
+  Minus -> tell [ASub (Register RAX) (Cell a)]
   Times -> tell [AMul (Cell a)]
- if r == Register True
+ if r == Register RAX
     then return ()
-    else tell [AMov r (Register True)]
+    else tell [AMov r (Register RAX)]
 
 -- <Jester01> actually you can do "or rax, -1"
 -- <Jester01> and that will do your true
@@ -55,9 +58,9 @@ compileOppositeOpR Greater = CLessEq
 compileOppositeOpR GreaterEq = CLess
 
 compileB :: B -> Compile ()
-compileB BTrue = tell [AOr (Register False) (Num (-1))]
-compileB BFalse = tell [AXor (Register False) (Register False)]
-compileB (BNot b) = do compileB b ; tell [ANot (Register False), ATest (Register False) (Register False)]
+compileB BTrue = tell [AOr (Register BL) (Num (-1))]
+compileB BFalse = tell [AXor (Register BL) (Register BL)]
+compileB (BNot b) = do compileB b ; tell [ANot (Register BL), ATest (Register BL) (Register BL)]
 compileB (BOpB And p q) = do
  lbl <- lift $ ("l"++) <$> fresh
  compileB p
@@ -73,12 +76,14 @@ compileB (BOpB Or p q) = do
 compileB (BOpR op x y) = do
  a <- lift $ fresh
  compileA x (Cell a)
- compileA y (Register True)
+ compileA y (Register RAX)
  tell [ case op of
-         Equal -> ATest (Cell a) (Register True)
-         _     -> ACmp  (Cell a) (Register True) 
-      , ASetByte (compileOppositeOpR op) (Register False)
-      , ADec (Register False)
+         Equal -> ACmp  (Cell a) (Register RAX)
+               --ATest (Cell a) (Register RAX)
+               -- test does not work
+         _     -> ACmp  (Cell a) (Register RAX) 
+      , ASetByte (compileOppositeOpR op) BL
+      , ADec (Register BL)
       ]
 
 compileS :: S -> Compile ()

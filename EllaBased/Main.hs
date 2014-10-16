@@ -2,9 +2,10 @@ module Main where
 
 import Parser
 import While
+import Assembly
 
 process file = do
  r <- parseFile file
  case r of
   Left x -> print x
-  Right (w,[]) -> mapM_ print (compile w)
+  Right (w,[]) -> putStrLn (s . compile $ w)
