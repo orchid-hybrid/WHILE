@@ -1,0 +1,11 @@
+based on boolean.asm the opcodes we need to compile this are:
+
+        or      bl,-1
+        xor     bl,bl
+        not     bl
+        test    bl,bl
+        cmp     rax,rbx
+        setge   bl
+        dec     bl
+        jz      .and
+        jnz     .or
